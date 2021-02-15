@@ -1,7 +1,7 @@
-name: "Mouse_AAV_PGR_RNAseq_bulk"
+name: Mouse_AAV_PGR_RNAseq_bulk
 output_dir: ../docs
 navbar:
-  title: "Mouse_AAV_PGR_RNAseq_bulk"
+  title: Mouse_AAV_PGR_RNAseq_bulk
   left:
   - text: Home
     href: index.html
@@ -9,6 +9,10 @@ navbar:
     href: about.html
   - text: License
     href: license.html
+  right:
+  - icon: fa-github
+    text: Source code
+    href: https://github.com/evangelynsim/Mouse_AAV_PGR_RNAseq_bulk
 output:
   workflowr::wflow_html:
     toc: yes
