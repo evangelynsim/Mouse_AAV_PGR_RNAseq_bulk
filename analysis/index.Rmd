@@ -46,7 +46,7 @@ listed below.
 ## Quality control
 
 * [QC and CPM](03.QC_and_CPM.html)
-* [MDS and Heatmap](04.MDS.html)
+* [MDS](04.MDS.html)
 
 ## Differential expression analysis
 
