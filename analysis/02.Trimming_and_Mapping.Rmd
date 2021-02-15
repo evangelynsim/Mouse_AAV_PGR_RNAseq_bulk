@@ -18,7 +18,7 @@ Following sequencing and obtaining .fastq.gz file, the first step is to perform 
 
 Bam files were then used for read counts to generate a count matrix.
 
-Mouse AAV-PGR bulk RNA-seq were performed using paiered end sequencing method and below are the scripts for trimming and mapping paired end sequencing read.
+Mouse AAV-PGR bulk RNA-seq were performed using paired-end sequencing method and below are the scripts for trimming and mapping paired end sequencing read.
 
 
 ### Used libraries and functions
