@@ -1,0 +1,69 @@
+---
+title: "QC filtered sequencing reads"
+author: "Evangelyn Sim"
+date: "2/15/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+## Introduction
+
+In the GEO submission 2 processed files were uploaded. 
+
+1. mrna_fulllen_pe_strrev_q30.mx.AAV_PR.unfiltered
+2. mrna_fulllen_pe_strrev_q30.mx.AAV_PR.fix_filt
+
+They have been uploaded in the /output folder and will be used below to generate different figures.
+
+### Used libraries and functions
+
+```{r}
+library(edgeR)
+library(limma)
+library(Glimma)
+library(gplots)
+
+```
+
+
+### Count per million reads
+
+```{r}
+
+rm1 <- read.delim("/group/card2/Evangelyn_Sim/Transcriptome_chromatin_human/Sequencing_ATAC_RNA/GITHUB/Mouse_AAV_PGR_RNAseq_bulk/output/mrna_fulllen_pe_strrev_q30.mx.AAV_PR.fix_filt", row.names = 1)
+colnames(rm1) = gsub("AAV.","",colnames(rm1))
+
+info = read.delim("/group/card2/Evangelyn_Sim/Transcriptome_chromatin_human/Sequencing_ATAC_RNA/GITHUB/Mouse_AAV_PGR_RNAseq_bulk/output/2020021_AAV_PR_RNA_samplesheet.txt", header = TRUE, sep = "\t")
+info$ID = gsub("_",".",info$ID)
+
+names(rm1) = info$ID[match(names(rm1),info$ID)]
+
+m = match(info$ID,names(rm1))
+rm2 = rm1[,m]
+rm1 = rm2
+
+###calculate cpm
+mycpm = cpm(rm1)
+
+summary(mycpm)
+
+x <- DGEList(rm1)
+
+names(x)
+
+logcountsx = cpm(x, log = T)
+
+write.csv(logcountsx, "logCPM_mrna_fulllen_pe_strrev_q30.mx.AAV_PR.fix_filt.csv")
+
+barplot(x$samples$lib.size, names=colnames(x), las=2, col = c("maroon1","turquoise1","red","royalblue1")[info$BinSex], main = "Library size")
+boxplot(logcountsx, xlab="", ylab="Log2 counts per million", las=2, col = c("maroon1","turquoise1","red","royalblue1")[info$BinSex])
+abline(h=median(logcountsx), col="navy")
+
+```
+

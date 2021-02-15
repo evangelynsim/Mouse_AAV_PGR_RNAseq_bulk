@@ -1,0 +1,180 @@
+---
+title: "QC filtered sequencing reads"
+author: "Evangelyn Sim"
+date: "2/15/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+## Introduction
+
+Following generation of the edgeR spreadsheet, use the following bash script to rank the genes before subjected them to GSEA using bash scripts.
+
+
+### Used libraries and functions
+
+* java/1.8.0_66
+* parallel
+```{r}
+library(ggplot2)
+library(grid)
+library(gridExtra)
+library(cowplot)
+library(ggpubr)
+library(dplyr)
+
+```
+
+### Rank Genes and change mouse gene name to human homolog
+
+Following generated edgeR spreadsheet, use the logFC and p.Value to generate a rank score using the following scripts.
+
+rnkgenM2H.sh
+
+      #!/bin/bash
+
+      #Specify the input file
+      XLS=$1
+      #Specify the gene ID column
+      ID=$2
+      #Specify the fold change value column
+      FC=$3
+      #Specify the raw p-value column
+      P=$4
+      #Specify ortholog maping
+      ORTH=$5
+
+
+      RNK=${XLS}.rnk
+      HUM=${RNK}.hum.rnk
+
+      sed 1d $XLS | tr -d '"' \
+      | awk -v I=$ID -v F=$FC -v P=$P '{FS="\t"} {print $I, $F, $P}' \
+      | awk '$2!="NA" && $3!="NA"' \
+      | awk '{s=1} $2<0{s=-1} {print $1"\t"s*-1*log($3)/log(10)}' \
+      | sort -k2gr | sed 's/inf$/330/'> $RNK
+
+      sed 's/_/\t/' $RNK \
+      | sort -k 1b,1 \
+      | join -1 2 -2 1 $ORTH - \
+      | awk '{OFS="\t"} {print $0,$5*$5}' \
+      | sort -k6gr \
+      | awk '!arr[$4]++' \
+      | awk '{OFS="\t"} !arr[$3]++ {print $3,$5}' \
+      | sort -k2gr > $HUM
+
+
+Run rnkgenM2H.sh to generate .rnk files
+
+      #!/bin/bash
+      for XLS in *xls ; do
+         ./rnkgen.sh $XLS 1 2 5 mouse2human.txt.sort 1 2 3 ;
+      done
+
+
+# Run GSEA using ranked genes
+
+Subject the generated .rnk files along with .gmt file sand run the following scripts to perform gene set enrichment analysis. 
+
+Download gmt files from GSEA webpage
+http://www.gsea-msigdb.org/gsea/login.jsp;jsessionid=C4D3892651A8792A331D7B32E9D2269C
+
+rungsea.sh
+
+      #!/bin/bash
+
+      run_gsea(){
+      RNK=$1
+      GMT=$2
+      echo /group/card2/Evangelyn_Sim/NGS/app/gsea-3.0.jar $RNK $GMT
+      java -Xmx4096m -cp /group/card2/Evangelyn_Sim/NGS/app/gsea-3.0.jar xtools.gsea.GseaPreranked  \
+      -gmx $GMT -collapse false -mode Max_probe \
+      -norm meandiv -nperm 1000 -rnk $RNK -scoring_scheme classic \
+      -rpt_label ${RNK}.${GMT} -include_only_symbols true -make_sets true \
+      -plot_top_x 20 -rnd_seed timestamp -set_max 5000 -set_min 10 -zip_report false \
+      -out . -gui false
+      }
+      export -f run_gsea
+
+      parallel -j5 run_gsea ::: *rnk ::: *gmt
+
+
+# Parse GSEA outcome
+
+```{bash}
+#!/bin/bash
+echo 'GeneSetName	GeneSetSize	ES	NES	p-val	FDR	FWER' > header.txt
+
+for GSEADIR in `ls | grep GseaPreranked | grep -v xls$` ; do
+  awk '{FS="\t"} {OFS="\t"} $8<0.05 {print $1,$4,$5,$6,$7,$8,$9} ' $GSEADIR/gsea_report_for_na_*xls \
+  | cat header.txt - > $GSEADIR.xls
+done
+
+
+
+```
+
+
+# Generate bubble plot from GSEA outcome: Reactome
+
+```{r}
+
+files = list.files(path = "/group/card2/Evangelyn_Sim/Transcriptome_chromatin_human/Sequencing_ATAC_RNA/20191204_mRNAseq_AAV/R/5.gsea/forpaper", pattern = ".*reactome.xls", full.names = T)
+mx = lapply(files, read.delim, header=T)
+
+for(i in 1:length(mx)){
+  
+  mx[[i]]$GeneSetName = gsub("REACTOME_", "", mx[[i]]$GeneSetName)
+  mx[[i]]$GeneSetName = gsub("RESPIRATORY_ELECTRON_TRANSPORT_ATP_SYNTHESIS_BY_CHEMIOSMOTIC_COUPLING_AND_HEAT_PRODUCTION_BY_UNCOUPLING_PROTEINS_", 
+                         "RESPIRATORY_ELECTRON_TRANSPORT_ATP_SYNTHESIS", mx[[i]]$GeneSetName)
+  mx[[i]]$GeneSetName = gsub("NEF_MEDIATES_DOWN_MODULATION_OF_CELL_SURFACE_RECEPTORS_BY_RECRUITING_THEM_TO_CLATHRIN_ADAPTERS", 
+                             "NEF_MEDIATES_DOWN_MODULATION_OF_CELL_SURFACE_RECEPTORS", mx[[i]]$GeneSetName)
+  mx[[i]]$GeneSetName = gsub("ACTIVATION_OF_THE_MRNA_UPON_BINDING_OF_THE_CAP_BINDING_COMPLEX_AND_EIFS_AND_SUBSEQUENT_BINDING_TO_43S", 
+                             "ACTIVATION_OF_THE_MRNA_UPON_CAP_BINDING_COMPLEX_BINDING", mx[[i]]$GeneSetName)
+  mxRU= mx[[i]]
+  mxRU= mxRU[order(mxRU$ES, decreasing = T), ]
+  mxRU= mxRU[c(1:10),]
+  mxRU= mxRU[order(mxRU$ES), ]
+  mxRU$colour = "springgreen3"
+  mxRU$GeneSetName = factor(mxRU$GeneSetName, levels = mxRU$GeneSetName)
+  
+  mxRD= mx[[i]]
+  mxRD= mxRD[order(mxRD$ES), ]
+  mxRD= mxRD[c(1:10),]
+  mxRD$colour = "purple"
+  mxRD$GeneSetName = factor(mxRD$GeneSetName, levels = mxRD$GeneSetName)
+  
+  ES_all = rbind(mxRD, mxRU)
+  
+  mx[[i]] = ggplot(ES_all, aes(y=GeneSetName, x=ES))+
+    geom_point(stat = 'identity', alpha=0.65, shape= 21, color="black", fill=ES_all$colour, aes(size=GeneSetSize))+
+    scale_size_continuous(range = c(1,5))+
+    theme_classic()+
+    labs(title = gsub("/group/card2/Evangelyn_Sim/Transcriptome_chromatin_human/Sequencing_ATAC_RNA/20191204_mRNAseq_AAV/R/5.gsea/forpaper/edgeR_RNA_all_|.hum.rnk|.c2.cp.reactome.xls","",files[[i]]), x="Enrichment Score", y="Gene Set Name")+
+    theme(plot.title = element_text(size = 12))+
+    theme(axis.text = element_text(size = 6))+
+    theme(axis.title = element_text(size = 8))+
+    theme(legend.text = element_text(size = 6))+
+    theme(legend.title = element_text(size = 8))+
+    theme(legend.position = "none")
+}  
+
+```
+
+```{r, fig.height=17.5, fig.width= 12.5}
+
+multi = arrangeGrob(mx[[1]],mx[[3]],
+                    mx[[4]],mx[[5]],
+                    mx[[2]],
+                    ncol = 2, nrow = 3)
+plot = as_ggplot(multi)
+
+plot
+
+```

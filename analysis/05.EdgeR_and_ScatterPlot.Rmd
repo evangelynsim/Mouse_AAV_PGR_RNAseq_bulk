@@ -1,0 +1,227 @@
+---
+title: "QC filtered sequencing reads"
+author: "Evangelyn Sim"
+date: "2/15/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+## Introduction
+
+In the GEO submission 2 processed files were uploaded. 
+
+1. mrna_fulllen_pe_strrev_q30.mx.AAV_PR.unfiltered
+2. mrna_fulllen_pe_strrev_q30.mx.AAV_PR.fix_filt
+
+They have been uploaded in the /output folder and will be used below to generate different figures.
+
+
+
+### Used libraries and functions
+
+```{r}
+library(edgeR)
+library(limma)
+library(dplyr)
+
+```
+
+
+### Read files 
+```{r}
+
+PRIOR = 20
+
+FDR = 0.05
+
+rm1 <- read.delim("/group/card2/Evangelyn_Sim/Transcriptome_chromatin_human/Sequencing_ATAC_RNA/GITHUB/Mouse_AAV_PGR_RNAseq_bulk/output/mrna_fulllen_pe_strrev_q30.mx.AAV_PR.fix_filt", row.names = 1)
+colnames(rm1) = gsub("AAV.","",colnames(rm1))
+
+info = read.delim("/group/card2/Evangelyn_Sim/Transcriptome_chromatin_human/Sequencing_ATAC_RNA/GITHUB/Mouse_AAV_PGR_RNAseq_bulk/output/2020021_AAV_PR_RNA_samplesheet.txt", header = TRUE, sep = "\t", stringsAsFactors = F)
+info$ID = gsub("_",".",info$ID)
+
+names(rm1) = info$ID[match(names(rm1),info$ID)]
+
+m = match(info$ID,names(rm1))
+rm2 = rm1[,m]
+rm1 = rm2
+
+sampleinfo = info
+levels(factor(sampleinfo$Group))
+levels(factor(sampleinfo$BinSex))
+table(colnames(rm2)==sampleinfo$ID)
+
+matrix = rm2
+pheno = info
+
+#write.table(pheno, file="../output/pheno.matrix_allsample.txt", sep="\t", quote = F, row.names = F)
+#pheno = read.delim(file="../output/pheno.matrix_allsample.txt")
+
+```
+
+
+# Differential Gene Expresison Analysis Between Control and AAV-PGR
+
+```{r}
+
+attach(pheno)
+design = model.matrix(as.formula("~ 0  + Group + Sex "))
+detach(pheno)
+design
+
+D = DGEList(counts=matrix)
+D = calcNormFactors(D)
+D = estimateGLMCommonDisp(D, design)
+D = estimateGLMTagwiseDisp(D, design, prior.df = PRIOR)
+fit = glmFit(D, design, prior.count = PRIOR)
+
+Contrast = makeContrasts(MCSvsPR = GroupPR - GroupMCS,
+                         levels=design)
+
+res = list()
+contrast.name = colnames(Contrast)
+
+for(i in 1:length(contrast.name)){
+  lrt = glmLRT(fit, contrast = Contrast[,i])   
+  
+  results = lrt$table
+  disp = lrt$dispersion
+  fitted.vals = lrt$fitted.values
+  coefficients = lrt$coefficients
+  
+  results$adj.p.value = p.adjust(p = results$PValue, method = "fdr" )
+  table(row.names(results) == row.names(fitted.vals))
+  
+  Name = row.names(results)
+  res0 = cbind(Name, results, disp, fitted.vals, coefficients)
+  res[[i]] = res0[order(res0$adj.p.value),]
+  #write.table(res[[i]], file= paste0("edgeR_RNA_all_", contrast.name[i] ,".xls"), quote=F, sep="\t", col.names = T, row.names = F)
+  
+  res[[i]]= mutate(res[[i]], cs= ifelse(res[[i]]$adj.p.value <= 0.05 & res[[i]]$logFC <= 0, "purple",
+                               ifelse(res[[i]]$adj.p.value <= 0.05 & res[[i]]$logFC >= 0, "springgreen3", "grey")))
+  
+  mxFDR = res[[i]][res[[i]]$adj.p.value <= FDR,]
+  mxFDR_Up = mxFDR[mxFDR$logFC>0,]
+  mxFDR_Dn = mxFDR[mxFDR$logFC<0,]
+  
+  res[[i]]= mutate(res[[i]], FDR= nrow(mxFDR))
+  res[[i]]= mutate(res[[i]], FDRup= nrow(mxFDR_Up))
+  res[[i]]= mutate(res[[i]], FDRdn= nrow(mxFDR_Dn))
+  
+  
+}
+
+for(i in 1:length(contrast.name)){
+  print(contrast.name[i])
+  print(table(res[[i]]$adj.p.value < 0.05))
+  #write.table(res[[i]][res[[i]]$PValue < 0.01,], file= paste0("edgeR_RNA_all_", contrast.name[i] ,"_p001.xls"), quote=F, sep="\t", col.names = T, row.names = F)
+}
+
+```
+
+# Plot Scatter Plot
+
+```{r, fig.height=4, fig.width= 4}
+
+par(mfrow=c(1,1))
+
+for(i in 1:length(contrast.name)){
+
+  plot(res[[i]]$logCPM, res[[i]]$logFC, pch=20, cex=1, col=res[[i]]$cs, 
+        xlab = "logCPM", ylab = "logFC",
+        main = paste0(contrast.name[i], 
+                      "\nFDR=0.05, N=", res[[i]][1,ncol(res[[i]])-2], 
+                      "\nUp=",res[[i]][1,ncol(res[[i]])-1],", Dn=",res[[i]][1,ncol(res[[i]])]))
+}
+
+```
+
+# Differential Sex-specific Gene Expresison Analysis Between Control and AAV-PGR
+
+```{r}
+########################################################################################################Dev
+
+attach(pheno)
+#design = model.matrix(as.formula("~ 0 + condition + lane + replicate + time"))
+design_dev = model.matrix(as.formula("~ 0  + BinSex"))
+detach(pheno)
+design_dev
+
+D_dev = DGEList(counts=matrix)
+D_dev = calcNormFactors(D_dev)
+D_dev = estimateGLMCommonDisp(D_dev, design_dev)
+D_dev = estimateGLMTagwiseDisp(D_dev, design_dev, prior.df = PRIOR)
+fit_dev = glmFit(D_dev, design_dev, prior.count = PRIOR)
+
+Contrast_dev = makeContrasts(MCS_FvsMCS_M = BinSexMCS_M - BinSexMCS_F,
+                             MCS_FvsPR_F = BinSexPR_F - BinSexMCS_F,
+                             MCS_MvsPR_M = BinSexPR_M - BinSexMCS_M,
+                             PR_FvsPR_M = BinSexPR_M - BinSexPR_F,
+                             levels=design_dev)
+
+res_dev = list()
+contrast.name_dev = colnames(Contrast_dev)
+
+for(i in 1:length(contrast.name_dev)){
+  lrt_dev = glmLRT(fit_dev, contrast = Contrast_dev[,i])   
+  results_dev = lrt_dev$table
+  disp_dev = lrt_dev$dispersion
+  fitted.vals_dev = lrt_dev$fitted.values
+  coefficients_dev = lrt_dev$coefficients
+  
+  results_dev$adj.p.value = p.adjust(p = results_dev$PValue, method = "fdr" )
+  table(row.names(results_dev) == row.names(fitted.vals_dev))
+  
+  Name = row.names(results_dev)
+  res0_dev = cbind(Name, results_dev, disp_dev, fitted.vals_dev, coefficients_dev)
+  res_dev[[i]] = res0_dev[order(res0_dev$adj.p.value),]
+  #write.table(res_dev[[i]], file= paste0("edgeR_RNA_all_sex_", contrast.name_dev[i] ,".xls"), quote=F, sep="\t", col.names = T, row.names = F)
+  
+  
+  res_dev[[i]]= mutate(res_dev[[i]], cs= ifelse(res_dev[[i]]$adj.p.value <= 0.05 & res_dev[[i]]$logFC <= 0, "purple",
+                               ifelse(res_dev[[i]]$adj.p.value <= 0.05 & res_dev[[i]]$logFC >= 0, "springgreen3", "grey")))
+  
+  mxFDR = res_dev[[i]][res_dev[[i]]$adj.p.value <= FDR,]
+  mxFDR_Up = mxFDR[mxFDR$logFC>0,]
+  mxFDR_Dn = mxFDR[mxFDR$logFC<0,]
+  
+  res_dev[[i]]= mutate(res_dev[[i]], FDR= nrow(mxFDR))
+  res_dev[[i]]= mutate(res_dev[[i]], FDRup= nrow(mxFDR_Up))
+  res_dev[[i]]= mutate(res_dev[[i]], FDRdn= nrow(mxFDR_Dn))
+
+  
+}
+
+for(i in 1:length(contrast.name_dev)){
+  print(contrast.name_dev[i])
+  print(table(res_dev[[i]]$adj.p.value < 0.05))
+  #write.table(res_dev[[i]][res_dev[[i]]$PValue< 0.01,], file= paste0("edgeR_RNA_all_sex_", contrast.name_dev[i] ,"_p001.xls"), quote=F, sep="\t", col.names = T, row.names = F)
+}
+
+
+```
+
+
+# Plot Scatter Plot
+
+```{r, fig.height=8, fig.width= 7}
+
+par(mfrow=c(2,2))
+
+for(i in 1:length(contrast.name_dev)){
+
+  plot(res_dev[[i]]$logCPM, res_dev[[i]]$logFC, pch=20, cex=1, col=res_dev[[i]]$cs, 
+        xlab = "logCPM", ylab = "logFC",
+        main = paste0(contrast.name_dev[i], 
+                      "\nFDR=0.05, N=", res_dev[[i]][1,ncol(res_dev[[i]])-2], 
+                      "\nUp=",res_dev[[i]][1,ncol(res_dev[[i]])-1],", Dn=",res_dev[[i]][1,ncol(res_dev[[i]])]))
+}
+
+```
+
