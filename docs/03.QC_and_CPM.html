@@ -538,6 +538,14 @@ output/mrna_fulllen_pe_strrev_q30.mx.AAV_PR.fix_filt
 output/2020021_AAV_PR_RNA_samplesheet.txt
 </td>
 </tr>
+<tr>
+<td style="text-align:left;">
+/group/card2/Evangelyn_Sim/Transcriptome_chromatin_human/Sequencing_ATAC_RNA/GITHUB/Mouse_AAV_PGR_RNAseq_bulk/output/logCPM_mrna_fulllen_pe_strrev_q30.mx.AAV_PR.fix_filt.csv
+</td>
+<td style="text-align:left;">
+output/logCPM_mrna_fulllen_pe_strrev_q30.mx.AAV_PR.fix_filt.csv
+</td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -546,16 +554,16 @@ output/2020021_AAV_PR_RNA_samplesheet.txt
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomevangelynsimMouseAAVPGRRNAseqbulktreeefdd1565e85dfbe2a3d6b399f637d6ec3a9e128ftargetblankefdd156a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/evangelynsim/Mouse_AAV_PGR_RNAseq_bulk/tree/efdd1565e85dfbe2a3d6b399f637d6ec3a9e128f" target="_blank">efdd156</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomevangelynsimMouseAAVPGRRNAseqbulktreefab012dd2746425f7a97ef7bd6ec2d826b369d2ftargetblankfab012da"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/evangelynsim/Mouse_AAV_PGR_RNAseq_bulk/tree/fab012dd2746425f7a97ef7bd6ec2d826b369d2f" target="_blank">fab012d</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomevangelynsimMouseAAVPGRRNAseqbulktreeefdd1565e85dfbe2a3d6b399f637d6ec3a9e128ftargetblankefdd156a" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomevangelynsimMouseAAVPGRRNAseqbulktreefab012dd2746425f7a97ef7bd6ec2d826b369d2ftargetblankfab012da" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/evangelynsim/Mouse_AAV_PGR_RNAseq_bulk/tree/efdd1565e85dfbe2a3d6b399f637d6ec3a9e128f" target="_blank">efdd156</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/evangelynsim/Mouse_AAV_PGR_RNAseq_bulk/tree/fab012dd2746425f7a97ef7bd6ec2d826b369d2f" target="_blank">fab012d</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -564,6 +572,10 @@ Note that you need to be careful to ensure that all relevant files for the analy
 Ignored files:
     Ignored:    .Rhistory
     Ignored:    .Rproj.user/
+
+Untracked files:
+    Untracked:  output/logCPM_mrna_fulllen_pe_strrev_q30.mx.AAV_PR.fix_filt.csv
+    Untracked:  output/mouse2human.txt.sort
 
 </code></pre>
 <p>
@@ -602,6 +614,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/evangelynsim/Mouse_AAV_PGR_RNAseq_bulk/blob/fab012dd2746425f7a97ef7bd6ec2d826b369d2f/analysis/03.QC_and_CPM.Rmd" target="_blank">fab012d</a>
+</td>
+<td>
+evangelynsim
+</td>
+<td>
+2021-02-19
+</td>
+<td>
+wflow_publish(“analysis/03.QC_and_CPM.Rmd”)
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/evangelynsim/Mouse_AAV_PGR_RNAseq_bulk/14f795751cbad4838c2e2cab5e89421a3e868239/docs/03.QC_and_CPM.html" target="_blank">14f7957</a>
+</td>
+<td>
+evangelynsim
+</td>
+<td>
+2021-02-19
+</td>
+<td>
+Build site.
+</td>
+</tr>
 <tr>
 <td>
 html
@@ -733,7 +779,7 @@ names(x)</code></pre>
 <pre><code>[1] &quot;counts&quot;  &quot;samples&quot;</code></pre>
 <pre class="r"><code>logcountsx = cpm(x, log = T)
 
-write.csv(logcountsx, &quot;logCPM_mrna_fulllen_pe_strrev_q30.mx.AAV_PR.fix_filt.csv&quot;)
+write.csv(logcountsx, &quot;/group/card2/Evangelyn_Sim/Transcriptome_chromatin_human/Sequencing_ATAC_RNA/GITHUB/Mouse_AAV_PGR_RNAseq_bulk/output/logCPM_mrna_fulllen_pe_strrev_q30.mx.AAV_PR.fix_filt.csv&quot;)
 
 barplot(x$samples$lib.size, names=colnames(x), las=2, col = c(&quot;maroon1&quot;,&quot;turquoise1&quot;,&quot;red&quot;,&quot;royalblue1&quot;)[info$BinSex], main = &quot;Library size&quot;)</code></pre>
 <p><img src="figure/03.QC_and_CPM.Rmd/unnamed-chunk-2-1.png" width="672" style="display: block; margin: auto;" /></p>
