@@ -141,7 +141,7 @@ wait
 
 Filtering out low counts genes by running the following filter.sh as 
 
-  bash filter.sh hrna_dev_mf_fulllen_se_strrev_q30.mx.all.fix
+  bash filter.sh mrna_fulllen_pe_strrev_q30.mx
 
   filter.sh
 
