@@ -59,7 +59,7 @@ names(x)
 
 logcountsx = cpm(x, log = T)
 
-write.csv(logcountsx, "logCPM_mrna_fulllen_pe_strrev_q30.mx.AAV_PR.fix_filt.csv")
+write.csv(logcountsx, "/group/card2/Evangelyn_Sim/Transcriptome_chromatin_human/Sequencing_ATAC_RNA/GITHUB/Mouse_AAV_PGR_RNAseq_bulk/output/logCPM_mrna_fulllen_pe_strrev_q30.mx.AAV_PR.fix_filt.csv")
 
 barplot(x$samples$lib.size, names=colnames(x), las=2, col = c("maroon1","turquoise1","red","royalblue1")[info$BinSex], main = "Library size")
 boxplot(logcountsx, xlab="", ylab="Log2 counts per million", las=2, col = c("maroon1","turquoise1","red","royalblue1")[info$BinSex])
